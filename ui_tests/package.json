@@ -1,0 +1,13 @@
+{
+  "name": "ui-tests-cineflex",
+  "version": "1.0.0",
+  "description": "Suites de prueba automatizadas con Selenium WebDriver para CineFlex",
+  "main": "test_suite.js",
+  "scripts": {
+    "test": "node test_suite.js"
+  },
+  "dependencies": {
+    "chromedriver": "^135.0.0",
+    "selenium-webdriver": "^4.20.0"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "qa-cineflex-project",
+  "version": "1.0.0",
+  "description": "Proyecto CineFlex - Plataforma Web y Suites de Certificación QA",
+  "scripts": {
+    "install:all": "npm --prefix backend install && npm --prefix ui_tests install",
+    "start:backend": "npm --prefix backend start",
+    "test:api": "npx newman run api_tests/CineFlex_API_Collection.json -e api_tests/CineFlex_Environment.json",
+    "test:ui": "npm --prefix ui_tests test"
+  },
+  "devDependencies": {
+    "newman": "^6.1.2"
+  }
+}

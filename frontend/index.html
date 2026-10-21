@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CineFlex - Tu Cine Digital</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Barra de navegacion -->
+  <header class="navbar" id="mainNavbar">
+    <div class="nav-brand">
+      <span class="logo-icon">🎬</span>
+      <span class="logo-text">CineFlex</span>
+    </div>
+    <div class="nav-actions" id="navActions" style="display: none;">
+      <span id="userGreeting" class="user-greeting">Hola, Usuario</span>
+      <button id="logoutBtn" class="btn btn-secondary">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- SECCION 1: LOGIN -->
+    <section id="loginSection" class="view-section active">
+      <div class="card login-card">
+        <h2 id="loginTitle" class="card-title">Iniciar Sesión</h2>
+        <p class="card-subtitle">Accede a tu cuenta para reservar tus entradas</p>
+
+        <!-- Mensajes de alerta de login -->
+        <div id="loginAlert" class="alert d-none"></div>
+
+        <form id="loginForm" onsubmit="event.preventDefault(); handleLoginSubmit();">
+          <div class="form-group">
+            <label for="usernameInput">Correo electrónico:</label>
+            <input type="email" id="usernameInput" name="username" placeholder="ejemplo@cineflex.com" required autocomplete="username">
+          </div>
+
+          <div class="form-group">
+            <label for="passwordInput">Contraseña:</label>
+            <input type="password" id="passwordInput" name="password" placeholder="••••••••" required autocomplete="current-password">
+          </div>
+
+          <button type="submit" id="loginSubmitBtn" class="btn btn-primary btn-block">Ingresar</button>
+        </form>
+
+        <div class="hint-box">
+          <small>Credenciales de prueba: <strong>admin@cineflex.com</strong> / <strong>CineFlex2024*</strong></small>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCION 2: CARTELERA -->
+    <section id="carteleraSection" class="view-section d-none">
+      <div class="section-header">
+        <div>
+          <h1 id="carteleraTitle">Cartelera</h1>
+          <p class="subtitle">Selecciona tu película favorita y asegura tus entradas</p>
+        </div>
+        <div class="filter-box">
+          <input type="text" id="movieSearchInput" placeholder="Buscar por título..." onkeyup="filterMovies()">
+        </div>
+      </div>
+
+      <div id="moviesGrid" class="movies-grid">
+        <!-- Renderizado dinámico de películas -->
+      </div>
+    </section>
+
+    <!-- SECCION 3: RESERVA Y ASIENTOS -->
+    <section id="reservaSection" class="view-section d-none">
+      <div class="reserva-container">
+        <div class="reserva-header">
+          <button id="backToCarteleraBtn" class="btn btn-outline" onclick="goToCartelera()">← Volver a Cartelera</button>
+          <h2 id="reservaTitle">Selección de Asientos y Pago</h2>
+        </div>
+
+        <div class="reserva-content">
+          <!-- Sala de cine -->
+          <div class="card sala-card">
+            <h3 id="selectedMovieTitle">Película</h3>
+            <p id="selectedMovieInfo" class="movie-meta"></p>
+
+            <div class="screen-box">
+              <div class="screen">PANTALLA</div>
+            </div>
+
+            <!-- Mapa de asientos -->
+            <div id="seatsGrid" class="seats-grid">
+              <!-- Renderizado de asientos con IDs: seat-A1, seat-A2, etc. -->
+            </div>
+
+            <div class="seats-legend">
+              <span class="legend-item"><span class="seat-sample available"></span> Disponible</span>
+              <span class="legend-item"><span class="seat-sample selected"></span> Seleccionado</span>
+              <span class="legend-item"><span class="seat-sample occupied"></span> Ocupado</span>
+            </div>
+
+            <div class="selection-summary">
+              <p>Asiento elegido: <strong id="selectedSeatLabel">Ninguno</strong></p>
+              <p>Total a pagar: <strong id="totalPriceLabel">$0</strong></p>
+            </div>
+          </div>
+
+          <!-- Formulario de Pago -->
+          <div class="card payment-card">
+            <h3>Datos de Pago (Pasarela Bancaria)</h3>
+            <div id="paymentAlert" class="alert d-none"></div>
+
+            <form id="paymentForm" onsubmit="event.preventDefault(); handlePaymentSubmit();">
+              <div class="form-group">
+                <label for="cardHolderInput">Nombre en la tarjeta:</label>
+                <input type="text" id="cardHolderInput" placeholder="TATIANA GOMEZ" required>
+              </div>
+
+              <div class="form-group">
+                <label for="cardNumberInput">Número de tarjeta (16 dígitos):</label>
+                <input type="text" id="cardNumberInput" maxlength="19" placeholder="4532 0000 1234 5678" required>
+                <small class="hint-text">Tip QA: Tarjetas con 4000... simulan fallo bancario</small>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group col-half">
+                  <label for="cardExpiryInput">Expiración:</label>
+                  <input type="text" id="cardExpiryInput" placeholder="MM/AA" maxlength="5" required>
+                </div>
+                <div class="form-group col-half">
+                  <label for="cardCvvInput">CVV:</label>
+                  <input type="password" id="cardCvvInput" placeholder="123" maxlength="4" required>
+                </div>
+              </div>
+
+              <button type="submit" id="paySubmitBtn" class="btn btn-success btn-block" disabled>Confirmar y Pagar</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCION 4: TICKET VIRTUAL (CONFIRMACION) -->
+    <section id="ticketSection" class="view-section d-none">
+      <div class="card ticket-card">
+        <div class="ticket-header">
+          <span class="check-icon">✓</span>
+          <h2 id="ticketTitle">¡Reserva Exitosa!</h2>
+          <p>Tu ticket virtual ha sido emitido con éxito</p>
+        </div>
+
+        <div class="ticket-details">
+          <div class="detail-row">
+            <span>Código de Ticket:</span>
+            <strong id="ticketCode">TICK-000000</strong>
+          </div>
+          <div class="detail-row">
+            <span>Película:</span>
+            <strong id="ticketMovie">-</strong>
+          </div>
+          <div class="detail-row">
+            <span>Asiento:</span>
+            <strong id="ticketSeat">-</strong>
+          </div>
+          <div class="detail-row">
+            <span>Titular:</span>
+            <strong id="ticketHolder">-</strong>
+          </div>
+          <div class="detail-row">
+            <span>Monto Pagado:</span>
+            <strong id="ticketAmount">$0</strong>
+          </div>
+          <div class="detail-row">
+            <span>Fecha y Hora:</span>
+            <strong id="ticketDate">-</strong>
+          </div>
+        </div>
+
+        <div class="ticket-actions">
+          <button id="newBookingBtn" class="btn btn-primary" onclick="goToCartelera()">Hacer otra reserva</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Script con logica del cliente web -->
+  <script>
+    const API_BASE = 'http://localhost:3000/api';
+    let currentToken = sessionStorage.getItem('cineflex_token') || null;
+    let currentUser = JSON.parse(sessionStorage.getItem('cineflex_user') || 'null');
+    let moviesList = [];
+    let selectedMovie = null;
+    let selectedSeat = null;
+
+    // Inicializar estado de interfaz
+    document.addEventListener('DOMContentLoaded', () => {
+      // Manejar historial para evitar volver a cartelera si se cerro sesion
+      window.addEventListener('popstate', handlePopState);
+
+      if (currentToken) {
+        showCarteleraView();
+      } else {
+        showLoginView();
+      }
+    });
+
+    function handlePopState(e) {
+      if (!currentToken) {
+        showLoginView();
+      }
+    }
+
+    function switchView(sectionId) {
+      document.querySelectorAll('.view-section').forEach(sec => {
+        sec.classList.remove('active');
+        sec.classList.add('d-none');
+      });
+      const target = document.getElementById(sectionId);
+      if (target) {
+        target.classList.remove('d-none');
+        target.classList.add('active');
+      }
+    }
+
+    function showLoginView() {
+      switchView('loginSection');
+      document.getElementById('navActions').style.display = 'none';
+      history.pushState({ page: 'login' }, 'Login', '#login');
+    }
+
+    function showCarteleraView() {
+      switchView('carteleraSection');
+      document.getElementById('navActions').style.display = 'flex';
+      if (currentUser) {
+        document.getElementById('userGreeting').textContent = `Hola, ${currentUser.name}`;
+      }
+      history.pushState({ page: 'cartelera' }, 'Cartelera', '#cartelera');
+      loadMovies();
+    }
+
+    // Gestion de login
+    async function handleLoginSubmit() {
+      const username = document.getElementById('usernameInput').value.trim();
+      const password = document.getElementById('passwordInput').value.trim();
+      const alertBox = document.getElementById('loginAlert');
+      const submitBtn = document.getElementById('loginSubmitBtn');
+
+      alertBox.className = 'alert d-none';
+      alertBox.textContent = '';
+
+      try {
+        const response = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          currentToken = data.token;
+          currentUser = data.user;
+          sessionStorage.setItem('cineflex_token', currentToken);
+          sessionStorage.setItem('cineflex_user', JSON.stringify(currentUser));
+          showCarteleraView();
+        } else {
+          alertBox.className = 'alert alert-error';
+          alertBox.textContent = data.message || 'Error en autenticación';
+          if (data.blocked) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Acceso Bloqueado';
+          }
+        }
+      } catch (err) {
+        alertBox.className = 'alert alert-error';
+        alertBox.textContent = 'No se pudo conectar con el servidor backend';
+      }
+    }
+
+    // Cierre de sesion seguro
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      currentToken = null;
+      currentUser = null;
+      sessionStorage.removeItem('cineflex_token');
+      sessionStorage.removeItem('cineflex_user');
+      showLoginView();
+    });
+
+    // Cargar peliculas de la API
+    async function loadMovies() {
+      try {
+        const res = await fetch(`${API_BASE}/movies`, {
+          headers: { 'Authorization': `Bearer ${currentToken}` }
+        });
+
+        if (res.status === 401) {
+          // Token invalido o sesion cerrada
+          currentToken = null;
+          showLoginView();
+          return;
+        }
+
+        const data = await res.json();
+        moviesList = data.movies || [];
+        renderMovies(moviesList);
+      } catch (err) {
+        console.error('Error cargando peliculas:', err);
+      }
+    }
+
+    function renderMovies(list) {
+      const grid = document.getElementById('moviesGrid');
+      grid.innerHTML = '';
+
+      list.forEach(movie => {
+        const card = document.createElement('div');
+        card.className = 'movie-card';
+        card.id = `movie-card-${movie.id}`;
+        card.innerHTML = `
+          <div class="movie-poster" style="background-image: url('${movie.poster}')">
+            <span class="movie-badge">${movie.classification}</span>
+          </div>
+          <div class="movie-details">
+            <h3 class="movie-title">${movie.title}</h3>
+            <p class="movie-genre">${movie.genre}</p>
+            <p class="movie-duration">⏱ ${movie.duration}</p>
+            <div class="movie-footer">
+              <span class="movie-price">$${movie.price.toLocaleString()} COP</span>
+              <button id="buyBtn-movie-${movie.id}" class="btn btn-primary buy-btn" onclick="startBooking(${movie.id})">
+                Comprar Boletos
+              </button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function filterMovies() {
+      const term = document.getElementById('movieSearchInput').value.toLowerCase();
+      const filtered = moviesList.filter(m => m.title.toLowerCase().includes(term));
+      renderMovies(filtered);
+    }
+
+    // Iniciar flujo de reserva
+    async function startBooking(movieId) {
+      selectedMovie = moviesList.find(m => m.id === movieId);
+      if (!selectedMovie) return;
+
+      selectedSeat = null;
+      document.getElementById('selectedSeatLabel').textContent = 'Ninguno';
+      document.getElementById('totalPriceLabel').textContent = `$${selectedMovie.price.toLocaleString()} COP`;
+      document.getElementById('selectedMovieTitle').textContent = selectedMovie.title;
+      document.getElementById('selectedMovieInfo').textContent = `${selectedMovie.genre} | ${selectedMovie.duration}`;
+      document.getElementById('paySubmitBtn').disabled = true;
+
+      switchView('reservaSection');
+      history.pushState({ page: 'reserva' }, 'Reserva', '#reserva');
+      await loadSeats();
+    }
+
+    async function loadSeats() {
+      try {
+        const res = await fetch(`${API_BASE}/seats`);
+        const data = await res.json();
+        const seatsGrid = document.getElementById('seatsGrid');
+        seatsGrid.innerHTML = '';
+
+        data.seats.forEach(s => {
+          const btn = document.createElement('button');
+          btn.id = `seat-${s.id}`;
+          btn.className = `seat-btn ${s.status}`;
+          btn.textContent = s.id;
+          btn.title = `Asiento ${s.id} - ${s.status === 'available' ? 'Disponible' : 'Ocupado'}`;
+
+          if (s.status === 'available') {
+            btn.onclick = () => selectSeat(s.id);
+          } else {
+            btn.disabled = true;
+          }
+
+          seatsGrid.appendChild(btn);
+        });
+      } catch (err) {
+        console.error('Error cargando asientos:', err);
+      }
+    }
+
+    function selectSeat(seatId) {
+      selectedSeat = seatId;
+      document.querySelectorAll('.seat-btn').forEach(b => {
+        if (!b.classList.contains('occupied')) {
+          b.classList.remove('selected');
+        }
+      });
+
+      const btn = document.getElementById(`seat-${seatId}`);
+      if (btn) btn.classList.add('selected');
+
+      document.getElementById('selectedSeatLabel').textContent = seatId;
+      document.getElementById('paySubmitBtn').disabled = false;
+    }
+
+    function goToCartelera() {
+      showCarteleraView();
+    }
+
+    // Procesar pago
+    async function handlePaymentSubmit() {
+      const cardHolder = document.getElementById('cardHolderInput').value.trim();
+      const cardNumber = document.getElementById('cardNumberInput').value.trim();
+      const cardExpiry = document.getElementById('cardExpiryInput').value.trim();
+      const cardCvv = document.getElementById('cardCvvInput').value.trim();
+      const alertBox = document.getElementById('paymentAlert');
+
+      alertBox.className = 'alert d-none';
+      alertBox.textContent = '';
+
+      if (!selectedSeat) {
+        alertBox.className = 'alert alert-error';
+        alertBox.textContent = 'Por favor selecciona un asiento antes de pagar';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/reservations`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentToken}`
+          },
+          body: JSON.stringify({
+            movieId: selectedMovie.id,
+            seatId: selectedSeat,
+            payment: {
+              cardHolder,
+              cardNumber,
+              expiry: cardExpiry,
+              cvv: cardCvv
+            }
+          })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          // Exito en la compra: mostrar pantalla de ticket virtual
+          document.getElementById('ticketCode').textContent = data.ticket.ticketId;
+          document.getElementById('ticketMovie').textContent = data.ticket.movie;
+          document.getElementById('ticketSeat').textContent = data.ticket.seat;
+          document.getElementById('ticketHolder').textContent = data.ticket.holder;
+          document.getElementById('ticketAmount').textContent = `$${data.ticket.amount.toLocaleString()} COP`;
+          document.getElementById('ticketDate').textContent = new Date(data.ticket.createdAt).toLocaleString();
+
+          switchView('ticketSection');
+          history.pushState({ page: 'ticket' }, 'Ticket', '#ticket');
+        } else {
+          // Rechazo del stub bancario (codigo 400 o 402)
+          alertBox.className = 'alert alert-error';
+          alertBox.textContent = data.message || 'Pago rechazado por la pasarela de pagos';
+        }
+      } catch (err) {
+        alertBox.className = 'alert alert-error';
+        alertBox.textContent = 'Error de conexión al procesar el pago';
+      }
+    }
+  </script>
+</body>
+</html>

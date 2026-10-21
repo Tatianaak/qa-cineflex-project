@@ -1,0 +1,174 @@
+{
+  "info": {
+    "_postman_id": "c1f2e3d4-5678-4abc-9def-cineflex00001",
+    "name": "CineFlex_API_Collection",
+    "description": "Suite de automatización de pruebas API REST para CineFlex. Incluye Login con captura de JWT, Cartelera con validación de contrato y SLA (<300ms), y prueba negativa de Reserva bancaria.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Endpoint 1 - Login Exitoso y Captura JWT",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Validar codigo de respuesta 200 OK",
+              "pm.test(\"Estado HTTP es 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "// Validar estructura de respuesta y capturar token dinamicamente",
+              "const jsonData = pm.response.json();",
+              "",
+              "pm.test(\"La respuesta contiene el token de autenticación\", function () {",
+              "    pm.expect(jsonData).to.have.property('token');",
+              "    pm.expect(jsonData.success).to.be.true;",
+              "});",
+              "",
+              "// Guardar el JWT en la variable de entorno para las siguientes peticiones",
+              "if (jsonData.token) {",
+              "    pm.environment.set(\"jwt_token\", jsonData.token);",
+              "    console.log(\"Token JWT guardado exitosamente:\", jsonData.token);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"admin@cineflex.com\",\n  \"password\": \"CineFlex2024*\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/auth/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "description": "Autenticación de usuario válida. Captura el token JWT retornado y lo guarda en el environment."
+      },
+      "response": []
+    },
+    {
+      "name": "Endpoint 2 - Cartelera (Validar JSON y SLA < 300ms)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Validar codigo 200",
+              "pm.test(\"Estado HTTP es 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "// Validar SLA de rendimiento menor a 300ms",
+              "pm.test(\"Cumple SLA de rendimiento: Tiempo de respuesta menor a 300ms\", function () {",
+              "    pm.expect(pm.response.responseTime).to.be.below(300);",
+              "});",
+              "",
+              "// Validar que la respuesta sea un JSON valido y contenga la lista de peliculas",
+              "pm.test(\"Respuesta es un JSON valido y tiene estructura esperada\", function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.be.an('object');",
+              "    pm.expect(jsonData.movies).to.be.an('array');",
+              "    pm.expect(jsonData.movies.length).to.be.greaterThan(0);",
+              "    ",
+              "    // Validar esquema del primer elemento",
+              "    const firstMovie = jsonData.movies[0];",
+              "    pm.expect(firstMovie).to.have.property('id');",
+              "    pm.expect(firstMovie).to.have.property('title');",
+              "    pm.expect(firstMovie).to.have.property('price');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/movies",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "movies"
+          ]
+        },
+        "description": "Consulta de cartelera usando el token JWT capturado. Valida esquema JSON y SLA < 300ms."
+      },
+      "response": []
+    },
+    {
+      "name": "Endpoint 3 - Reserva Rechazada (Tarjeta Falsa)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Validar que el backend rechace la transaccion bancaria (400 o 402)",
+              "pm.test(\"Transaccion rechazada por banco con codigo 402 Payment Required\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([400, 402]);",
+              "});",
+              "",
+              "// Validar mensaje descriptivo de rechazo de pago",
+              "pm.test(\"Mensaje de error correcto devuelto por el Stub bancario\", function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.success).to.be.false;",
+              "    pm.expect(jsonData.message).to.include(\"rechazada por el banco\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"movieId\": 1,\n  \"seatId\": \"A1\",\n  \"payment\": {\n    \"cardHolder\": \"PRUEBA QA FALSA\",\n    \"cardNumber\": \"4000123456789010\",\n    \"expiry\": \"12/28\",\n    \"cvv\": \"000\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/reservations",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "reservations"
+          ]
+        },
+        "description": "Prueba negativa enviando una tarjeta simulada inválida (prefijo 4000). Debe retornar 402."
+      },
+      "response": []
+    }
+  ]
+}
